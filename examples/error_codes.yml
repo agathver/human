@@ -1,0 +1,21 @@
+- scenario: 'Error codes'
+  tests:
+    - it: 'Should exit with 0 for no errors'
+      run: 
+        exe: '../test_programs/error_codes/error_codes'
+        args: []
+      expect:
+        exitcode: 0
+    - it: 'Should exit with 1'
+      run:
+        exe: '../test_programs/error_codes/error_codes'
+        args: [ '1' ]
+      expect:
+        exitcode: 1
+    - it: 'Should exit with 255'
+      run:
+        exe: '../test_programs/error_codes/error_codes'
+        args: ['wtf']
+      expect:
+        exitcode: 255
+    
