@@ -2,13 +2,20 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os/exec"
+	"strings"
 	"syscall"
+
+	"gopkg.in/yaml.v2"
 )
 
 // RunTests is used to run the tests
 func RunTests(spec Spec) {
-	fmt.Printf("Scenario %s\n", spec.Scenario)
+	header := fmt.Sprintf("Scenario %s", spec.Scenario)
+	fmt.Println(header)
+	fmt.Println(strings.Repeat("-", len(header)))
 
 	for i, t := range spec.Tests {
 		status, err := test(t)
@@ -24,10 +31,23 @@ func RunTests(spec Spec) {
 			fmt.Printf("    %d FAIL It %s\n", i+1, t.It)
 		}
 	}
+
+	fmt.Println()
 }
 
 func test(t TestCase) (bool, error) {
 	cmd := exec.Command(t.Run.Exe, t.Run.Args...)
+
+	success := true
+
+	expects := make(map[string]interface{})
+
+	for _, item := range t.Expect {
+		expects[item.Key.(string)] = item.Value
+	}
+
+	expectedExitCode, hasExitCond := expects["exitcode"]
+	outputConds, hasOutputCond := expects["output"]
 
 	err := cmd.Start()
 
@@ -35,15 +55,74 @@ func test(t TestCase) (bool, error) {
 		return false, err
 	}
 
-	err = cmd.Wait()
+	if hasOutputCond {
+		outputExpects := make(map[string]string)
 
-	// if err != nil {
-	// 	if cmd.ProcessState.Success
-	// }
+		for _, item := range outputConds.(yaml.MapSlice) {
+			expects[item.Key.(string)] = item.Value.(string)
+		}
 
-	ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
-	exitCode := ws.ExitStatus()
+		success, err = testOutputs(cmd, outputExpects)
 
-	return t.Expect.ExitCode == exitCode, nil
+		if err != nil {
+			return false, err
+		}
+	}
 
+	cmd.Wait()
+
+	if success && hasExitCond {
+		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
+		success = expectedExitCode.(int) == ws.ExitStatus()
+	}
+
+	return success, nil
+
+}
+
+func testOutputs(cmd *exec.Cmd, conditions map[string]string) (bool, error) {
+	expectedStdout, hasStdout := conditions["stdout"]
+	expectedStderr, hasStderr := conditions["stderr"]
+
+	success := true
+
+	if hasStdout {
+		stdout, err := cmd.StdoutPipe()
+
+		if err != nil {
+			return false, err
+		}
+
+		success, err = testPipeMatches(stdout, expectedStdout)
+
+		if err != nil {
+			return false, err
+		}
+	}
+
+	if success && hasStderr {
+		stderr, err := cmd.StderrPipe()
+
+		if err != nil {
+			return false, err
+		}
+
+		success, err = testPipeMatches(stderr, expectedStderr)
+
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return success, nil
+}
+
+func testPipeMatches(pipe io.Reader, content string) (bool, error) {
+	pipeContent, err := ioutil.ReadAll(pipe)
+
+	if err != nil {
+		return false, err
+	}
+
+	return string(pipeContent) == content, nil
 }

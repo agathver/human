@@ -1,9 +1,8 @@
 package main
 
-// Expectations are in a test case
-type Expectations struct {
-	ExitCode int
-}
+import (
+	"gopkg.in/yaml.v2"
+)
 
 // Command is a runnable command
 type Command struct {
@@ -15,7 +14,7 @@ type Command struct {
 type TestCase struct {
 	It     string
 	Run    Command
-	Expect Expectations
+	Expect yaml.MapSlice
 }
 
 // Spec represents a test suite

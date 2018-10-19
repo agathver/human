@@ -1,0 +1,28 @@
+- scenario: 'Output'
+  tests:
+    - it: 'Should print Hello World'
+      run: 
+        exe: '../test_programs/output/output'
+        args: ['Hello Word']
+      expect:
+        output:
+          stdout: 'Hello World\n'
+
+    - it: 'Should print Hello World with exit code 0'
+      run: 
+        exe: '../test_programs/output/output'
+        args: ['Hello Word']
+      expect:
+        exitcode: 0
+        output:
+          stdout: 'Hello World\n'
+
+    - it: 'Should print Hello World with exit code 1'
+      run: 
+        exe: '../test_programs/output/output'
+        args: ['Hello Word', '1']
+      expect:
+        exitcode: 1
+        output:
+          stdout: 'Hello World\n'
+    

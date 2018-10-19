@@ -11,7 +11,7 @@ func usage() {
 	println("human - Pseudo human to test your command line tools")
 	println("Version: 0.0.1 - completely untested code")
 	println()
-	println("Usage: human SPEC")
+	println("Usage: human SPEC [SPEC]...")
 	println()
 	println("Arguments:")
 	println("    SPEC: Spec file with tests")
@@ -23,23 +23,24 @@ func main() {
 		usage()
 	}
 
-	specFile := os.Args[1]
+	for _, specFile := range os.Args[1:] {
 
-	input, err := ioutil.ReadFile(specFile)
+		input, err := ioutil.ReadFile(specFile)
 
-	if err != nil {
-		panic(err)
-	}
+		if err != nil {
+			panic(err)
+		}
 
-	var specs []Spec
+		var specs []Spec
 
-	err = yaml.Unmarshal(input, &specs)
+		err = yaml.Unmarshal(input, &specs)
 
-	if err != nil {
-		panic(err)
-	}
+		if err != nil {
+			panic(err)
+		}
 
-	for _, spec := range specs {
-		RunTests(spec)
+		for _, spec := range specs {
+			RunTests(spec)
+		}
 	}
 }

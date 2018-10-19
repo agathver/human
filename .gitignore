@@ -14,3 +14,5 @@
 human/human
 
 test_programs/error_codes/error_codes
+test_programs/output/output
+test_programs/test/test
